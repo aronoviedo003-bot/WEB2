@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    
+    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Calculadora Métodos Numéricos</title>
+</head>
+<body>
+
+    <div class="caja-ecuacion">
+        <h3>SISTEMA 5x5 (Red Hidráulica)</h3>
+        <p>4P1 - P2 - P3 = 10<br>
+           -P1 + 4P2 - P4 = 15<br>
+           -P1 + 4P3 - P4 - P5 = 20<br>
+           -P2 - P3 + 4P4 - P5 = 25<br>
+           -P3 - P4 + 4P5 = 30</p>
+        <button onclick="calcularTodo()">CALCULAR TODO</button>
+    </div>
+
+    <div class="fila-metodos">
+        <div class="caja-pequena" onclick="mostrarIndividual('gs')">
+            RESULTADO CON GAUSS-SEIDEL
+        </div>
+        <div class="caja-pequena" onclick="mostrarIndividual('sor')">
+            RESULTADO CON SOR (w=1.15)
+        </div>
+        <div class="caja-pequena" onclick="mostrarIndividual('cg')">
+            RESULTADO CON GRADIENTE CONJUGADO
+        </div>
+    </div>
+
+    <div class="caja-grande" id="cajaDestino">
+        RESULTADO CON EL MÉTODO DESEADO (Haz clic en una caja de arriba)
+    </div>
+
+    <script>
+        // Datos del sistema
+        const A = [
+            [4, -1, -1, 0, 0],
+            [-1, 4, 0, -1, 0],
+            [-1, 0, 4, -1, -1],
+            [0, -1, -1, 4, -1],
+            [0, 0, -1, -1, 4]
+        ];
+        const b = [10, 15, 20, 25, 30];
+        
+        let resultados = { gs: "", sor: "", cg: "" };
+
+        function calcularTodo() {
+            // GAUSS-SEIDEL
+            let xgs = [0,0,0,0,0];
+            let tablaGS = "<b>Gauss-Seidel:</b><table><tr><th>Iter</th><th>P1</th><th>P2</th><th>P3</th><th>P4</th><th>P5</th></tr>";
+            for(let k=1; k<=3; k++){
+                for(let i=0; i<5; i++){
+                    let s = 0;
+                    for(let j=0; j<5; j++) if(i!==j) s += A[i][j]*xgs[j];
+                    xgs[i] = (b[i]-s)/A[i][i];
+                }
+                tablaGS += `<tr><td>${k}</td>${xgs.map(v=>`<td>${v.toFixed(2)}</td>`).join('')}</tr>`;
+            }
+            resultados.gs = tablaGS + "</table>";
+
+            // SOR
+            let xsor = [0,0,0,0,0]; let w = 1.15;
+            let tablaSOR = "<b>SOR (w=1.15):</b><table><tr><th>Iter</th><th>P1</th><th>P2</th><th>P3</th><th>P4</th><th>P5</th></tr>";
+            for(let k=1; k<=3; k++){
+                for(let i=0; i<5; i++){
+                    let s = 0;
+                    for(let j=0; j<5; j++) if(i!==j) s += A[i][j]*xsor[j];
+                    let x_new = (b[i]-s)/A[i][i];
+                    xsor[i] = (1-w)*xsor[i] + w*x_new;
+                }
+                tablaSOR += `<tr><td>${k}</td>${xsor.map(v=>`<td>${v.toFixed(2)}</td>`).join('')}</tr>`;
+            }
+            resultados.sor = tablaSOR + "</table>";
+
+            // GRADIENTE CONJUGADO
+            let xcg = [0,0,0,0,0];
+            let r = [...b]; let p = [...r];
+            let tablaCG = "<b>Gradiente Conjugado:</b><table><tr><th>Iter</th><th>P1</th><th>P2</th><th>P3</th><th>P4</th><th>P5</th></tr>";
+            for(let k=1; k<=3; k++){
+                let Ap = A.map(row => row.reduce((acc, v, j) => acc + v * p[j], 0));
+                let alpha = r.reduce((acc, v, i) => acc + v*v, 0) / p.reduce((acc, v, i) => acc + v*Ap[i], 0);
+                for(let i=0; i<5; i++) xcg[i] += alpha * p[i];
+                let r_new = r.map((v, i) => v - alpha * Ap[i]);
+                let beta = r_new.reduce((acc, v, i) => acc + v*v, 0) / r.reduce((acc, v, i) => acc + v*v, 0);
+                p = r_new.map((v, i) => v + beta * p[i]);
+                r = r_new;
+                tablaCG += `<tr><td>${k}</td>${xcg.map(v=>`<td>${v.toFixed(2)}</td>`).join('')}</tr>`;
+            }
+            resultados.cg = tablaCG + "</table>";
+
+            alert("Cálculos listos. Haz clic en las cajas inferiores.");
+        }
+
+        function mostrarIndividual(metodo) {
+            const caja = document.getElementById('cajaDestino');
+            if(resultados[metodo] === "") {
+                caja.innerHTML = "Primero debes hacer clic en CALCULAR TODO";
+            } else {
+                caja.innerHTML = resultados[metodo];
+            }
+        }
+    </script>
+</body>
+</html>
